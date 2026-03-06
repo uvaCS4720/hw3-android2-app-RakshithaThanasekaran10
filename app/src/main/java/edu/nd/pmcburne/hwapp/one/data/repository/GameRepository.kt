@@ -9,12 +9,15 @@ import edu.nd.pmcburne.hwapp.one.data.db.AppDatabase
 import edu.nd.pmcburne.hwapp.one.data.db.GameEntity
 import kotlinx.coroutines.flow.Flow
 
+// repository that coordinates data access between the API and the local database
 class GameRepository(private val context: Context) {
     private val dao = AppDatabase.getInstance(context).gameDao()
 
+    // returns a flow of games from the local database for the given gender and date
     fun getGames(gender: String, date: String): Flow<List<GameEntity>> =
         dao.getGames(gender, date)
 
+    // checks whether the device currently has an active internet connection
     fun isOnline(): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = cm.activeNetwork ?: return false
@@ -22,6 +25,7 @@ class GameRepository(private val context: Context) {
         return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
+    // fetches the latest scoreboard data from the API and stores it in the local database
     suspend fun fetchAndStore(gender: String, year: String, month: String, day: String) {
         val date = "$year-$month-$day"
         val response = RetrofitInstance.api.getScoreboard(gender, year, month, day)
@@ -30,6 +34,7 @@ class GameRepository(private val context: Context) {
         dao.upsertGames(entities)
     }
 
+    // extension function to map a Game object to a GameEntity
     private fun Game.toEntity(gender: String, date: String): GameEntity {
         val isLive = gameState == "live"
         val isFinal = gameState == "final"
