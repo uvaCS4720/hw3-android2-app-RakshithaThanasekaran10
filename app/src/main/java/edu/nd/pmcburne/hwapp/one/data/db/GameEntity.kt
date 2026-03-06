@@ -3,6 +3,9 @@ package edu.nd.pmcburne.hwapp.one.data.db
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+// Room database entity representing a single basketball game
+// each row in the "games" table corresponds to one game on a specific date
+// games are uniquely identified by their API-provided gameID
 @Entity(tableName = "games")
 data class GameEntity(
     @PrimaryKey val id: String,
