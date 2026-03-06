@@ -28,9 +28,11 @@ import edu.nd.pmcburne.hwapp.one.data.db.GameEntity
 import edu.nd.pmcburne.hwapp.one.ui.viewmodel.MainViewModel
 import java.util.Calendar
 
+//main screen composable, displays the date picker, controls, and game list
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(vm: MainViewModel = viewModel()) {
+    // collects all UI state from the ViewModel as compose state
     val games by vm.games.collectAsState()
     val isLoading by vm.isLoading.collectAsState()
     val isOnline by vm.isOnline.collectAsState()
@@ -38,8 +40,10 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
     val selectedDate by vm.selectedDate.collectAsState()
     val errorMessage by vm.errorMessage.collectAsState()
 
+    //controls visibility of the date picker
     var showDatePicker by remember { mutableStateOf(false) }
 
+    // pull to refresh state, tied to the loading indicator and refresh action
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isLoading,
         onRefresh = { vm.refresh() }
@@ -52,7 +56,7 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text("🏀 NCAA Basketball", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text("NCAA Basketball", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -60,6 +64,7 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                     actionIconContentColor = Color.White
                 ),
                 actions = {
+                    // shows a wifi off icon in the toolbar when the device is offline
                     if (!isOnline) {
                         Icon(
                             Icons.Default.WifiOff,
@@ -68,6 +73,7 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                             modifier = Modifier.padding(end = 8.dp)
                         )
                     }
+                    // manual refresh button
                     IconButton(onClick = { vm.refresh() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
@@ -102,6 +108,7 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                             Text(dateLabel, fontWeight = FontWeight.Medium)
                         }
 
+                        // men's/women's toggle using FilterChips
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -137,7 +144,7 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
                     }
                 }
 
-                // Error
+                // Error message
                 errorMessage?.let {
                     Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
@@ -206,6 +213,8 @@ fun MainScreen(vm: MainViewModel = viewModel()) {
     }
 }
 
+// displays a single game as a card
+
 @Composable
 fun GameCard(game: GameEntity, isMens: Boolean) {
     val isInProgress = game.statusName.contains("IN_PROGRESS", ignoreCase = true)
@@ -250,12 +259,13 @@ fun GameCard(game: GameEntity, isMens: Boolean) {
 
             if (isScheduled) {
                 Spacer(Modifier.height(8.dp))
-                Text("🕐 ${game.startTime}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${game.startTime}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
 }
 
+// colored badge showing the current game status
 @Composable
 fun StatusBadge(isInProgress: Boolean, isFinal: Boolean, game: GameEntity, isMens: Boolean) {
     val text = when {
@@ -282,6 +292,7 @@ fun StatusBadge(isInProgress: Boolean, isFinal: Boolean, game: GameEntity, isMen
     )
 }
 
+// displays a single team row with an optional home indicator, team name, and score
 @Composable
 fun TeamRow(teamName: String, score: String, isWinner: Boolean, showScore: Boolean, isHome: Boolean = false) {
     Row(
