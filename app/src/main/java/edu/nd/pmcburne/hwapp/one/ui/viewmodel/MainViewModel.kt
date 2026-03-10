@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import kotlinx.coroutines.Job
 
 // ViewModel for the main screen. survives configuration changes
 // holds the selected date, gender filter, game list, loading state, and error message as StateFlows that the UI observes and reacts to automatically
@@ -59,19 +60,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // manually triggers a reload, used by the refresh button and pull to refresh
     fun refresh() { loadGames() }
 
+    private var collectJob: Job? = null
+
     private fun loadGames() {
         val (year, month, day) = _selectedDate.value
         val gender = if (_isMens.value) "men" else "women"
         val dateStr = "$year-${month.toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}"
 
-        // observe local database and push updates to UI
-        viewModelScope.launch {
+        // Cancels the previous database observer before starting a new one for the new date/gender
+        collectJob?.cancel()
+        collectJob = viewModelScope.launch {
             repository.getGames(gender, dateStr).collectLatest { dbGames ->
                 _games.value = dbGames
             }
         }
 
-        // fetch from API if online then store results in the database
+        // fetches fresh data from the API if online, then store it in the database
+        // the Flow collector above will automatically update the UI when the database changes
         viewModelScope.launch {
             _isOnline.value = repository.isOnline()
             if (repository.isOnline()) {
@@ -93,6 +98,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // returns today's date as a (year, month, day) triple.
     private fun todayTriple(): Triple<Int, Int, Int> {
         val cal = Calendar.getInstance()
         return Triple(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
